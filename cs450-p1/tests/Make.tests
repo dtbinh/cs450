@@ -1,0 +1,59 @@
+# -*- makefile -*-
+
+include $(SRCDIR)/tests/Make.args
+
+OUTPUTS = $(addsuffix .output,$(TESTS))
+ERRORS = $(addsuffix .errors,$(TESTS))
+RESULTS = $(addsuffix .result,$(TESTS))
+
+clean.test:
+	rm -f $(OUTPUTS) $(ERRORS) $(RESULTS) results
+
+clean::
+	rm -f $(OUTPUTS) $(ERRORS) $(RESULTS) results
+
+check:: results
+	@cat $<
+	@COUNT="`egrep '^(pass|FAIL) ' $< | wc -l | sed 's/[ 	]//g;'`"; \
+	FAILURES="`egrep '^FAIL ' $< | wc -l | sed 's/[ 	]//g;'`"; \
+	if [ $$FAILURES = 0 ]; then					  \
+		echo "All $$COUNT tests passed.";			  \
+	else								  \
+		echo "$$FAILURES of $$COUNT tests failed.";		  \
+		exit 1;							  \
+	fi
+
+results: $(RESULTS)
+	@for d in $(TESTS) $(EXTRA_GRADES); do			\
+		if echo PASS | cmp -s $$d.result -; then	\
+			echo "pass $$d";			\
+		else						\
+			echo "FAIL $$d";			\
+		fi;						\
+	done > $@
+
+$(foreach test,$(TESTS),$(eval $(test).output: TEST = $(test)))
+
+# Prevent an environment variable VERBOSE from surprising us.
+VERBOSE =
+
+# The following 4 lines build the command line to automatically
+# run the executable, redirecting output to appropriate files.
+# For a test case like tests/verbose, the command line would be:
+#   ./stream -v < /dev/null 2> tests/verbose.errors > tests/verbose.output
+TESTCMD = ./$(bin_PROGRAMS)
+TESTCMD += $(if $($(TEST)_ARGS),$($(TEST)_ARGS),$(*F))
+TESTCMD += < /dev/null
+TESTCMD += 2> $(TEST).errors $(if $(VERBOSE),|tee,>) $(TEST).output
+
+%.output: $(bin_PROGRAMS)
+	$(TESTCMD)
+
+# Test cases are identified as things like tests/verbose.result.
+# They depend on tests/verbose.ck and tests/verbose.output. If
+# the output file does not exist, the previous directive will
+# create it. The *.ck file specifies the expected output of the
+# test case.
+%.result: %.ck %.output
+	perl -I$(SRCDIR) $< $* $@
+
