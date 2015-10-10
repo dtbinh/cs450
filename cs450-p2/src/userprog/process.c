@@ -17,6 +17,14 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/synch.h"
+
+//For passing the semaphore as well as the cmd_copy to thread_create
+struct process_semaphore
+{
+  struct semaphore s;
+  char *cmd;
+};
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -28,20 +36,59 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *cmd_line)
 {
+
   char *cmd_copy;
   tid_t tid;
+  char* token;
+  uint32_t *page;
+  uint8_t arg_cnt = 0;  
+  char* save_ptr;
+  uint8_t ii = 0;
+  uint32_t *esp;
+  struct process_semaphore ps;
 
   /* Make a copy of FILE_NAME.
-     Otherwise there's a race between the caller and load(). */
+  Otherwise there's a race between the caller and load(). */
   cmd_copy = palloc_get_page (0);
-  if (cmd_copy == NULL)
-    return TID_ERROR;
+
+  if (cmd_copy == NULL) return TID_ERROR;
   strlcpy (cmd_copy, cmd_line, PGSIZE);
 
+  page = palloc_get_page(0);
+  token = strtok_r(cmd_copy,"  ",&save_ptr);
+
+  while(token != NULL)
+  {
+    page[arg_cnt] = (uint32_t)token;
+    arg_cnt++;
+    token = strtok_r(NULL,"  ",&save_ptr);
+  }
+
+  esp = PHYS_BASE;
+  for(ii = arg_cnt -1;ii > 0;ii--)
+  {
+    esp = (uint32_t*)page[ii];
+    esp -= strlen((char*)(page[ii]))+1;
+
+  }
+//	hex_dump ( (uintptr_t)0, (const void *)esp,100, true);
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (cmd_line, PRI_DEFAULT, start_process, cmd_copy);
-  if (tid == TID_ERROR)
-    palloc_free_page (cmd_copy);
+  ps.cmd = cmd_copy;
+
+  sema_init(&ps.s, 0); //initially locked
+
+  sema_up(&ps.s);      //up to let child run
+
+  tid = thread_create (cmd_line, PRI_DEFAULT, start_process, &ps); 
+  //not sure how exactly to pass ps, 
+  //this is the only way that makes so far, last param is void*
+
+  if (tid == TID_ERROR) palloc_free_page (cmd_copy);
+  
+  sema_down(&ps.s); //down to lock parent
+
+  palloc_free_page (page);
   return tid;
 }
 
@@ -85,7 +132,12 @@ start_process (void *cmd_line_)
    in project 3. */
 int
 process_wait (tid_t child_tid UNUSED)
-{
+{ 
+
+  //keep loop for now, replace next project
+  int ii;
+  for (ii = 0; ii < 10000; ii++)	  
+	thread_yield();
   return -1;
 }
 
@@ -430,7 +482,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE;
+        *esp = PHYS_BASE - 12;
       else
         palloc_free_page (kpage);
     }
@@ -456,3 +508,12 @@ install_page (void *upage, void *kpage, bool writable)
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
+
+/*char* parse_cmdline(argv)
+{
+	argv split up by strtok_r 
+	then load first argument into load()
+	after send remain arguments to stack
+
+
+}*/
