@@ -95,9 +95,12 @@ process_execute (const char *cmd_line)
 /* A thread function that loads a user process and starts it
    running. */
 static void
-start_process (void *cmd_line_)
+start_process (void *process_semaphore_/*cmd_line_*/)
 {
-  char *cmd_line = cmd_line_;
+  printf ("start_process() starting\n");
+  process_semaphore * ps = process_semaphore_;
+  //char *cmd_line = cmd_line_;
+  char *cmd_line = ps -> cmd;
   struct intr_frame if_;
   bool success;
 
@@ -112,11 +115,12 @@ start_process (void *cmd_line_)
   palloc_free_page (cmd_line);
   if (!success)
     thread_exit ();
-
+  printf("start_process exiting\n");
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
+     M
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
@@ -133,11 +137,12 @@ start_process (void *cmd_line_)
 int
 process_wait (tid_t child_tid UNUSED)
 { 
-
   //keep loop for now, replace next project
+  printf("process_wait() starting\n");
   int ii;
   for (ii = 0; ii < 10000; ii++)	  
 	thread_yield();
+  printf("process_wait() exiting\n");
   return -1;
 }
 
