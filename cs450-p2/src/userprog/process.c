@@ -1,4 +1,4 @@
-#include "userprog/process.h"
+#include "userprog/process.h"  
 #include <debug.h>
 #include <inttypes.h>
 #include <round.h>
@@ -19,13 +19,6 @@
 #include "threads/vaddr.h"
 #include "threads/synch.h"
 
-//For passing the semaphore as well as the cmd_copy to thread_create
-struct process_semaphore
-{
-  struct semaphore s;
-  char *cmd;
-};
-
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
@@ -36,91 +29,98 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *cmd_line)
 {
-
   char *cmd_copy;
   tid_t tid;
-  char* token;
-  uint32_t *page;
-  uint8_t arg_cnt = 0;  
-  char* save_ptr;
-  uint8_t ii = 0;
-  uint32_t *esp;
-  struct process_semaphore ps;
+   
 
   /* Make a copy of FILE_NAME.
-  Otherwise there's a race between the caller and load(). */
+     Otherwise there's a race between the caller and load(). */
   cmd_copy = palloc_get_page (0);
-
-  if (cmd_copy == NULL) return TID_ERROR;
+  if (cmd_copy == NULL)
+    return TID_ERROR;
   strlcpy (cmd_copy, cmd_line, PGSIZE);
 
-  page = palloc_get_page(0);
-  token = strtok_r(cmd_copy,"  ",&save_ptr);
-
-  while(token != NULL)
-  {
-    page[arg_cnt] = (uint32_t)token;
-    arg_cnt++;
-    token = strtok_r(NULL,"  ",&save_ptr);
-  }
-
-  esp = PHYS_BASE;
-  for(ii = arg_cnt -1;ii > 0;ii--)
-  {
-    esp = (uint32_t*)page[ii];
-    esp -= strlen((char*)(page[ii]))+1;
-
-  }
-//	hex_dump ( (uintptr_t)0, (const void *)esp,100, true);
-
-  /* Create a new thread to execute FILE_NAME. */
-  ps.cmd = cmd_copy;
-
-  sema_init(&ps.s, 0); //initially locked
-
-  sema_up(&ps.s);      //up to let child run
-
-  tid = thread_create (cmd_line, PRI_DEFAULT, start_process, &ps); 
-  //not sure how exactly to pass ps, 
-  //this is the only way that makes so far, last param is void*
-
-  if (tid == TID_ERROR) palloc_free_page (cmd_copy);
-  
-  sema_down(&ps.s); //down to lock parent
-
-  palloc_free_page (page);
+   /* Create a new thread to execute FILE_NAME. */
+  tid = thread_create (cmd_line, PRI_DEFAULT, start_process, cmd_copy);
+  if (tid == TID_ERROR)
+    palloc_free_page (cmd_copy);
   return tid;
 }
 
 /* A thread function that loads a user process and starts it
    running. */
 static void
-start_process (void *process_semaphore_/*cmd_line_*/)
+start_process (void *cmd_line_)
 {
-  printf ("start_process() starting\n");
-  process_semaphore * ps = process_semaphore_;
-  //char *cmd_line = cmd_line_;
-  char *cmd_line = ps -> cmd;
+  char *cmd_line = cmd_line_;
   struct intr_frame if_;
   bool success;
+  int ii, argc;
+  char *argv[32];
+	uint32_t arg_addr[32];
+  char *token;
+  char *save_ptr;
+  char *csp;
+  uint32_t *usp;
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
+
+  token = strtok_r(cmd_line, "  ", &save_ptr);
   success = load (cmd_line, &if_.eip, &if_.esp);
+
+  argc = 0; 
+  while (token != NULL)
+  {
+    argv[argc] = token;
+    argc++;
+    token = strtok_r(NULL, "  ", &save_ptr);
+  }
+
+  csp = ((char*)if_.esp);
+  for(ii = argc-1;ii >=0 ; ii--)
+  {
+    csp -= strlen(argv[ii]);
+    csp--;
+		arg_addr[ii] = (uint32_t)csp;
+    strlcpy(csp, argv[ii], strlen(argv[ii])+1);
+  }
+	while((unsigned)csp % 4 != 0)
+	{
+		csp--;
+		*csp = 0x00;
+	}    
+  usp = (uint32_t*)csp;
+  for(ii = argc; ii >=0; ii--)
+  {
+     usp -= 1;
+     *usp = (uint32_t)arg_addr[ii];
+  }
+  usp -= 1;
+  *usp = (uint32_t)(usp+1);
+  usp -= 1;
+  *usp = (uint32_t)argc;
+  usp -= 1;
+  *usp = 0x00000000;
+  
+  if_.esp = (void*)usp;
+  
+  //char * hex_out[200];
+
+
 
   /* If load failed, quit. */
   palloc_free_page (cmd_line);
   if (!success)
     thread_exit ();
-  printf("start_process exiting\n");
+
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
-     M
      we just point the stack pointer (%esp) to our stack frame
      and jump to it. */
   asm volatile ("movl %0, %%esp; jmp intr_exit" : : "g" (&if_) : "memory");
@@ -136,13 +136,10 @@ start_process (void *process_semaphore_/*cmd_line_*/)
    in project 3. */
 int
 process_wait (tid_t child_tid UNUSED)
-{ 
-  //keep loop for now, replace next project
-  printf("process_wait() starting\n");
+{
   int ii;
-  for (ii = 0; ii < 10000; ii++)	  
-	thread_yield();
-  printf("process_wait() exiting\n");
+  for (ii = 0; ii < 100000; ii++)
+    thread_yield();
   return -1;
 }
 
@@ -487,7 +484,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE - 12;
+        *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
     }
@@ -513,12 +510,3 @@ install_page (void *upage, void *kpage, bool writable)
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
-
-/*char* parse_cmdline(argv)
-{
-	argv split up by strtok_r 
-	then load first argument into load()
-	after send remain arguments to stack
-
-
-}*/

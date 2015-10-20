@@ -11,7 +11,7 @@
 Pavan Gudimetta gudimepg@dukes.jmu.edu
 Patrick Winters winterpa@dukes.jmu.edu
 Conner Turnbull turnbucc@dukes.jmu.edu
-Mickey Rosen		rosenmb@dukes.jmu.edu
+Mickey Rosen	rosenmb@dukes.jmu.edu
 
 ---- PRELIMINARIES ----
 
@@ -31,6 +31,13 @@ Mickey Rosen		rosenmb@dukes.jmu.edu
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration. Identify the purpose of each in 25 words or less.
 
+	//For passing the semaphore as well as the cmd_copy to thread_create
+	struct process_semaphore
+	{
+	  struct semaphore s;
+	  char *cmd;
+	};
+
 
 ---- ALGORITHMS ----
 
@@ -38,16 +45,30 @@ Mickey Rosen		rosenmb@dukes.jmu.edu
 >> How do you arrange for the elements of argv[] to be in the right order?
 >> How do you avoid overflowing the stack page?
 
+We used page allocation in order to parse arguments and store them onto
+the stack. Using a page,we stored the addresses of the tokens that were 
+being parsed with strtok_r() and then used said page to push the addressed
+referrencing the tokens onto the stack. We then iterated through the page
+based on the number of arguments or tokens, and we stored their addresses
+values onto the stack one character at a time. This allowed for the 
+parsed argument to be pushed onto the stack in order. The for loop conditional
+of starting the loop counter at the number of args - 1 in order to prevent
+the final null character to be pushed onto the stack. 
 
 ---- RATIONALE ----
 
 >> A3: Why does Pintos implement strtok_r() but not strtok()?
 
+From the Pintos Documentation: strtok uses global data,
+so it is unsafe in threaded programs such as kernels.
 
 >> A4: In Pintos, the kernel separates commands into a executable name
 >> and arguments. In Unix-like systems, the shell does this separation.
 >> Describe at least two advantages of the Unix approach.
 
+It is safer for a shell to do this in case there are bad executable names 
+and/or invalid arguements. Also, if something were to go wrong, it is better
+for a user program to fail rather than have the kernel fail. 
 
 ---- SYNCHRONIZATION ----
 
@@ -58,7 +79,45 @@ Mickey Rosen		rosenmb@dukes.jmu.edu
 >> What happens if the command-line specifies an executable that does
 >> not exist?
 
+From process_execute
 
+//initially locked
+  sema_init(&ps.s, 0);
+
+  /* Create a new thread to execute FILE_NAME. */
+  tid = thread_create (cmd_line, PRI_DEFAULT, start_process, &ps);
+
+  //down to lock parent
+  sema_down(&ps.s);
+
+  if (tid == TID_ERROR) palloc_free_page (ps.cmd);
+
+  palloc_free_page (page);
+  return tid;
+
+From start_process
+
+struct process_semaphore  * ps = process_semaphore_;
+char *cmd_line = ps->cmd;
+
+...
+
+if (!success)
+    {
+      //sema_up before exiting
+      sema_up(&ps->s);
+      thread_exit ();
+    }
+
+We created a struct to pass a semaphore to start_process in addition 
+to the command line. We initialized the semaphore to 0 so it would be
+locked initially. We passed the struct as the last arguement when creating
+the thread.  We downed the semaphore right after that to lock the parent
+(keeping it busy).  Inside the child thread, we let it run and immediately
+before exiting, we upped the semaphore.
+
+If the command line specifies an executable that does not exist, it just fails
+with "no such file or directory."
 
                              SYSTEM CALLS
                              ============
@@ -69,6 +128,7 @@ Mickey Rosen		rosenmb@dukes.jmu.edu
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration. Identify the purpose of each in 25 words or less.
 
+Nothing changed or added.
 
 ---- ALGORITHMS ----
 
@@ -79,6 +139,15 @@ Mickey Rosen		rosenmb@dukes.jmu.edu
 >> to validate the entire thing is in user memory and is mapped into the
 >> virtual memory space (e.g., by using pagedir_get_page()).
 
+We validate the entire buffer based on the arguments being passed onto
+the stack. Using the function pagedir_get_page() function we check the 
+current threads page directory with the mapping of the buffer returned 
+from parse_syscall_args. if it doesn't return null, then read and write 
+system calls are run otherwise the thread is killed. This allows for 
+secure memory mapping and management and ensures that no unauthorized 
+access to the buffer is done. 
+
+
 
 >> B3: Suppose a system call causes a full page (4,096 bytes) of data
 >> to be copied from user space into the kernel. What is the least
@@ -86,6 +155,14 @@ Mickey Rosen		rosenmb@dukes.jmu.edu
 >> (e.g. calls to pagedir_get_page()) that might result? What about
 >> for a system call that only copies 2 bytes of data? Is there room
 >> for improvement in these numbers, and how much?
+
+The greatest amount of calls to pagedir_get_page() would be 2048 and the least
+would be 1 given the input into the page. One call could be made given a 4095
+string followed by a null-byte were to be entered into a page. 2048 calls could
+be made based on the the input with the pattern of character followed by 
+a null-byte completed populated an entire page. 
+
+
 
 
 
@@ -107,5 +184,21 @@ the quarter.
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
+
+Mickey: While the code was well commented, it was very poorly documented.
+I was very confused for half of the time we were working on this simply
+because not much information was given on what really did what.  Also,
+our objectives weren't very clear toward the end, mainly on what we needed
+to do for the process synchronization.  The project description has nothing
+in it related to processs synchronization other than it being listed as a 
+weekly goal.
+
+Pavan: While the entire project was not hard in general, as Mickey stated the
+documentation was far-cry of what proper documented software should be. While
+Pintos is known as one of the "best" documented minimal operating system 
+its specifications were very vague and lead to major misunderstanding during
+the implementation of this project. This particular part of the Pintos project
+did give some insight into how kernel designer design the overall architecture
+in how their systems are going to be used and run.
 
 >> Any other comments?

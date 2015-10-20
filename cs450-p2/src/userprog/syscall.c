@@ -8,10 +8,12 @@
 #include "userprog/process.h"
 #include "devices/input.h"
 #include <ctype.h>
+#include "userprog/pagedir.h"
+#include "devices/shutdown.h"
+#include <stdbool.h>
 static void syscall_handler (struct intr_frame *);
-void parse_syscall_args (uint32_t *sp, int num_args, ...);
-int read (int fd, void *buffer, unsigned size);
-int write (int fd,void* const buffer,unsigned size);
+void syscall_init (void);
+
 void
 syscall_init (void) 
 {
@@ -40,150 +42,194 @@ parse_syscall_args (uint32_t *sp, int num_args, ...)
 
   if ((uint32_t)sp >= (uint32_t)PHYS_BASE)
     thread_exit ();
+
 }
 
 static void
 syscall_handler (struct intr_frame *f ) 
 {
-	printf("syscall!\n");
+	//printf("syscall!\n");
 //	printf("address if intr_frame-esp%d\n",f->esp);
 //	printf("address of edp %d\n",f->ebp);
 	uint32_t *syscall_num;
-	char* rd_buf = NULL;
-	const char* write_buf = NULL;
-	int* fdsc = NULL;
-	uint16_t* filesize;
-
-
+	void* rd_buf;
+	const void* write_buf;
+	int fdsc = -1;
+	unsigned filesize = 0;
+	int exit_status;
+//hex_dump ( (uintptr_t)f->esp, (const void *)f->esp, (uint32_t)PHYS_BASE - (uint32_t)f->esp, true);
+	
 	syscall_num =(uint32_t*)f->esp;
 	//printf("syscall_num %d\n",*syscall_num);
 	switch(*syscall_num)
 		{
 			//SYS_HALT
-			case 0:
+			case SYS_HALT:
+				halt();
 				break;
+
 			//SYS_EXIT
-			case 1:
-				//sys_status = ((int)(f->esp+4));
-			
-				process_exit();
-				printf("exit complete");
+			case SYS_EXIT:
+				
+				parse_syscall_args(f->esp,1,&exit_status);
+				f->eax = exit_status;
+				//printf("exit complete");
 				break;
 				
 			//SYS_EXEC
-			case 2:
+			case SYS_EXEC:
 				break;
 
 			//SYS_WAIT
-			case 3:
+			case SYS_WAIT:
 				break;
 
 			//SYS_CREATE
-			case 4:
+			case SYS_CREATE:
 				break;
 
 			//SYS_REMOVE
-			case 5:
+			case SYS_REMOVE:
 				break;
 
 			//SYS_OPEN
-			case 6:
+			case SYS_OPEN:
 				break;
 
 			//SYS_FILESIZE
-			case 7:
+			case SYS_FILESIZE:
 				break;
 
 			//SYS_READ
 
-			case 8:
+			case SYS_READ:
 		
-				printf("inside of sys_read\n");							
-				parse_syscall_args(f->esp,3,fdsc,&rd_buf,&filesize);
-				if(*fdsc == 0)
-					f->eax = input_getc();
-				else
-					read(*fdsc,(void*)rd_buf,*filesize);
+				fdsc =(int)(f->esp+4);
+				rd_buf =(f->esp+8);
+				filesize =*(unsigned*)(f->esp+12);
+				f->eax = read(fdsc,rd_buf,filesize);
 				break;
 			//SYS_WRITE
-			case 9:
-				printf("inside of write\n");
-				parse_syscall_args(f->esp,3,fdsc,&write_buf,&filesize);
-				printf("fdsc_write %d\n",*fdsc);	
-				if(*fdsc == 1)
-					putbuf(write_buf,(size_t)filesize);
-				else
-					{
-						printf("File Does not Exist!\n");
-						process_exit();
-					}
-				break;
-
+			case SYS_WRITE:
+				fdsc =*(int*)(f->esp+4);
+				write_buf =(f->esp+8);
+				filesize =*(unsigned*)(f->esp+12);
+				f->eax = write(fdsc,write_buf,filesize);		
+        break;
 			//SYS_SEEK
-			case 10:
+			case SYS_SEEK:
 					break;
 
 			//SYS_TELL
-			case 11:
+			case SYS_TELL:
 					break;
 
 			//SYS_CLOSE
-			case 12:
+			case SYS_CLOSE:
 					break;
 
-			//SYS_MNMAP
-			case 13:
+			//SYS_MMAP
+			case SYS_MMAP:
 					break;
 
 			//SYS_MUMAP
-			case 14:
+			case SYS_MUNMAP:
 					break;
 
 			//SYS_CHDIR
-			case 15:
+			case SYS_CHDIR:
 					break;
 
 			//SYS_MKDIR
-			case 16:
+			case SYS_MKDIR:
 					break;
 
 			//SYS_READDIR
-			case 17:
+			case SYS_READDIR:
 					break;
 
 			//SYS_ISDIR
-			case 18:
+			case SYS_ISDIR:
 					break;
 
 			//SYS_ISNUMBER
-			case 19:
+			case SYS_INUMBER:
 					break;
 		}
 	//hexdump here
-  thread_exit ();
 }
 
-
-/*
-int
-read(int fd,void *buffer,unsigned size)
+void halt(void)
 {
-//read from file descriptor
+	shutdown_power_off();
+}
+pid_t exec(const char* cmd_line UNUSED)
+{
 
-
-
-// use input_getc to read the file into buffer
-// then use buffer to get size	
-
-
+	return -1;
+}
+int wait(pid_t pid UNUSED)
+{
+	return -1;
+}
+bool create(const char* file UNUSED, unsigned initial_size UNUSED)
+{
+	return 0;
+}
+bool remove (const char *file UNUSED)
+{
+	return -1;
+}
+int open (const char *file UNUSED)
+{
+	return -1;
+}
+int filesize (int fd UNUSED)
+{
+return -1;
+}
+int read (int fd, void *buffer, unsigned size)
+{
+	if(pagedir_get_page(thread_current()->pagedir,buffer) != NULL)
+					{
+						if((fd == 0))
+							return input_getc();
+						else
+							//read(*fdsc,(void*)rd_buf,*filesize);
+							printf("inside of else size is %d\n",size);
+					}
+				else
+					printf("Invalid Memory Mapping!\n");
+					thread_exit();
+	return -1;
+}
+int write (int fd, const void *buffer, unsigned size)
+{
+		if(pagedir_get_page(thread_current()->pagedir,buffer) != NULL)
+			{	
+				if(fd == 1 )
+						 putbuf(buffer,(size_t)size);
+				else
+				{
+						printf("File Does not Exist!\n");
+						process_exit();
+				}	
+					}
+				else
+					printf("Invalid Memory Mapping!\n");
+					thread_exit();
+	return -1;
+}
+void seek (int fd UNUSED, unsigned position UNUSED)
+{
+	
+}
+unsigned tell (int fd UNUSED)
+{
+		return 1;
+}
+void close (int fd UNUSED)
+{
+	
 }
 
-int 
-write(int fd,void* const buffer,unsigned size)
-{
-
-
-
-
-
-}*/
