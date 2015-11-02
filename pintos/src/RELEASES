@@ -1,0 +1,153 @@
+Team Members: Larry, Moe, Curly
+
+==============================================================================
+
+Week of 8/31 - 9/6 (sample entry)
+
+Project status summary:
+
+    * Total test cases passed: 51
+    * New test cases passed this week: alarm-priority, alarm-simultaneous
+    * Next test case(s) to attempt: priority-change, priority-sema
+
+We made good progress on the alarm clock scheduler this week, and got it
+switched over to priority-based. We are now going to start working on adding
+support for changing priorities.
+
+Contribution summary:
+
+    * Larry and Moe met to work on the alarm-priority test case and got that
+      working correctly.
+    * Curly updated the design document, answering question A4.
+    * Curly and Moe completed the alarm-simultaneous test case, based on
+      suggestions from Larry.
+
+Questions and issues:
+
+The priority-sema test case looks fairly straightforward, but the expected
+output seems unusual. It looks like the priority levels should all be lower
+than the main thread, but they seem to preempt the main thread. Why should the
+child threads preempt the main thread?
+
+==============================================================================
+
+Team Members: Pavan Gudimetta, Patrick Winters, Conner Turnbull, and Mickey
+Rosen
+
+==============================================================================
+
+Week of 09/27
+
+Project status summmary: 
+
+	* Total test cases passed:57 
+
+Contribution summary:
+	September 25
+	All members except for Conner attended and began to set up the 
+	project on their local machines
+
+	September 29
+	All members met and began working on the project. Pavan and Patrick 
+	worked on Argument passing. Mickey and Conner were assigned to work 
+	on System Calling. Pavan and Patrick attempted multiple ideas and 
+	then created questions to ask during office hours. Mickey and Conner 
+	made no progress.
+
+	September 30
+	Pavan and Patrick met with Kirkpatrick to have questions answered 
+	about the project. Later that day, Pavan, Patrick, and Conner met up 
+	to finish Argument Passing. After it was implemented, Pavan proceeded 
+	to answer questions in the design document while Patrick taught Conner 
+	what was done the in the Argument Passing to get him up to up to speed.
+
+	October 1
+	All members except Patrick met up and worked on System Calling. 
+	Pavan and Conner worked on a implementation for System Calling 
+	however were stuck at an impasse due to an unresolvable compile-time 
+	error. Mickey was present when Pavan was working on implementing 
+	System Calls however showed no active participation during time 
+	spent working.
+
+	October 4
+	Pavan and Patrick met to work on System Calling more. Both members 
+	tried to implement as much of the logic as they could while still 
+	running into the compile time error.
+
+	October 5
+	Pavan, Patrick, and Conner met with Kirkpatrick during office hours to 
+	ask questions about the implementation of read() and write(). Pavan 
+	and Patrick met later that day to reverse using FILE* and started 
+	using base C calls. This solved the issue of the compile-time error. 
+
+	October 7
+	Pavan and Mickey met with Kirkpatrick during office hours to clarify 
+	issues with Pavan continued work on system calls while Mickey and 
+	Conner started work on Process Syncronization. Patrick began running 
+	the provided hex_dump function to test if argument passing 
+	validated correctly.
+
+	October 9
+	Pavan continued looking into making the read and write system calls 
+	function while Mickey continue working on Process Syncronization. 
+	Patrick showed up later and helped Pavan work on System Calling 
+	and began to finalize the implementation.  
+
+	October 11
+	Conner and Mickey finished process syncronization. Patrick showed up 
+	shortly after and worked up on cleaning up the team meeting log. 
+	Conner and Mickey finished up the Design Documents required for 
+	submission.
+
+	October 12
+	Patrick spent a few hours attempts to re-write arg passing from 
+	scratch	passed on discussions with other groups and his group 
+	members.
+
+	October 17
+	Pavan and Patrick met to continue working on argument passing and fix
+	the current implementation. Mickey and Conner arrived later to help 
+	out as well.	
+
+	October 18
+	All members except Patrick showed up and tried to fix arg passing
+	using the pre-existing process.c file. They attempted to do the
+	passing using a separate page and fix addressing that way.
+	
+	October 20
+	All members showed up and continued to work on argument passing.
+	Patrick pushed one of his attempts to the repository and the group
+	used that code to fix argument passing and make it work.
+
+	October 21
+	All members of the group showed up to continue work on system calls.
+	The group began to work on create and remove system calls.
+
+	October 23
+	Pavan and Conner went to see Kirkpatrick for more questions regarding
+	the file system. Later that day, Pavan implemented the changes that
+	were discussed during the office hours.
+
+	<between the dates on Oct 23 and Oct 29>
+	Group members worked on sections of the project individually.
+
+	October 29
+	Pavan and Conner continued working on the wait system call.
+
+	October 30
+	Patrick began working on error checking for test cases. Pavan fixed a bug
+	in the wait system call that prevented lists from working.	
+
+	October 31
+	Pavan and Patrick discusses current issues with the wait system call. Pavan
+	began implementing what was discussed. Mickey was there but was on his phone a lot and
+	did not contribute anything meaningful to the project.
+
+	November 1
+	Mickey arrived but was a repeat of October 31. Despite asking Mickey to work
+	on sections of the project, he did not seem to get anything done or ask for
+	help. Patrick fixed a bug in the open system call which prevented anything
+	in the file system to have proper pointers. Pavan and Conner continued to
+	work on the wait system call. Patrick implemented the rest of the error
+	checking to pass test cases.
+===============================================================================
