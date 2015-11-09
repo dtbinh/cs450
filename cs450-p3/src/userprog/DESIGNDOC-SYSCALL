@@ -1,0 +1,105 @@
+                     +--------------------------+
+                     |         CS 450           |
+                     | PROJECT 3: SYSTEM CALLS  |
+                     |     DESIGN DOCUMENT      |
+                     +--------------------------+
+
+---- GROUP ----
+
+>> Fill in the names and email addresses of your group members.
+
+FirstName LastName <email@domain.example>
+FirstName LastName <email@domain.example>
+FirstName LastName <email@domain.example>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+
+                             SYSTEM CALLS
+                             ============
+
+---- DATA STRUCTURES ----
+
+>> A1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+
+---- ALGORITHMS ----
+
+>> A2: The wait() system call is very tricky, due to the complicated
+>> nature of the timing of events. As a starting point, assume thread A
+>> is the parent of thread B and A calls wait() to wait on B. If thread
+>> B is still running, A becomes blocked until B calls exit(). How do
+>> you accomplish this? Here is the trickier case: What if B had already
+>> exited prior to A calling wait()? At that point, A must be able to
+>> confirm that B was one of its children, but the struct thread for B
+>> might not exist anymore. Describe your algorithms for both wait() and
+>> exit() in precise terms, indicating how the two system calls work
+>> together.
+
+
+---- RATIONALE ----
+
+>> A3: To perform reads and writes to the file system, you must maintain
+>> a mapping between file descriptors--integers that the user-mode
+>> program sees--and pointers to internal file structures--which are
+>> invisible to the user-mode program. There are a couple of approaches
+>> to this. For instance, you can have a global (struct file *) array
+>> and use the file descriptors as an index into the array.
+>> Alternatively, you could have such an array within the thread
+>> structure. Lastly, you could just create a linked list. What are the
+>> advantages and/or disadvantages of the approach you adopted? Note
+>> that, in all cases, you MUST prevent collisions. For instance, if
+>> thread A opens file foo.txt and gets file descriptor 2, thread B
+>> must NOT be able to pass 2 as a file descriptor and read or write to
+>> foo.txt (unless B has also opened foo.txt). How do you validate that
+>> the file descriptor passed from the user-mode program is okay?
+
+
+>> A4: The wait() system call requires establishing a parent-child
+>> relationship between threads that doesn't otherwise exist. Explain
+>> how you created this and why you selected the approach that you did.
+
+
+---- SYNCHRONIZATION ----
+
+>> A5: Access the file system is a straightforward example of the
+>> readers-writers problem. Explain how your implementation applies a
+>> known solution to this problem. Do you synchronize access to individual
+>> files or to then entire file system as a whole? What are the relative
+>> advantages of these two approaches?
+
+
+>> A6: When a process begins executing, the executable file must be loaded
+>> into memory, which can take time. How do you ensure that the file cannot
+>> be changed by any other process during this time?
+
+
+
+                           SURVEY QUESTIONS
+                           ================
+
+Answering these questions is optional, but it will help us improve the
+course in future quarters.  Feel free to tell us anything you
+want--these questions are just to spur your thoughts.  You may also
+choose to respond anonymously in the course evaluations at the end of
+the quarter.
+
+>> In your opinion, was this assignment, or any one of the three problems
+>> in it, too easy or too hard?  Did it take too long or too little time?
+
+>> Did you find that working on a particular part of the assignment gave
+>> you greater insight into some aspect of OS design?
+
+>> Is there some particular fact or hint we should give students in
+>> future quarters to help them solve the problems?  Conversely, did you
+>> find any of our guidance to be misleading?
+
+>> Any other comments?
