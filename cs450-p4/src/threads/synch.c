@@ -70,6 +70,7 @@ sema_down (struct semaphore *sema)
     {
       list_push_back (&sema->waiters, &thread_current ()->elem);
       thread_block ();
+			thread_search();
     }
   sema->value--;
   intr_set_level (old_level);

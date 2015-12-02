@@ -344,6 +344,8 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+	thread_search();
+	//if current thread no longer has highest priority yields
 }
 
 /* Returns the current thread's priority. */
@@ -351,6 +353,7 @@ int
 thread_get_priority (void) 
 {
   return thread_current ()->priority;
+	// given priority donation, returns higher (donated) priority
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -551,6 +554,28 @@ allocate_tid (void)
   return tid;
 }
 
+void thread_search(void)
+{
+	struct thread* cur;
+	cur = thread_current();
+  struct list_elem *e;
+  struct thread *f;
+  struct thread *prev = NULL;
+  for (e = list_begin (&ready_list); e != list_end (&ready_list);
+       e = list_next (e))
+  {
+    f = list_entry (e, struct thread, elem);
+    if(thread_current()->priority < f->priority)
+      {
+        thread_yield();
+        if (cur != f)
+          {
+            prev = switch_threads (cur, f);
+            thread_schedule_tail (prev);
+          }
+      }	
+  }
+}
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
