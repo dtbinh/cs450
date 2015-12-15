@@ -1,0 +1,175 @@
+                    +-----------------------+
+                    |         CS 450        |
+                    | PROJECT 4: SCHEDULING |
+                    |    DESIGN DOCUMENT    |
+                    +-----------------------+
+
+---- INSTRUCTIONS ----
+
+>> Complete the answers to the questions in a succinct, precise
+>> manner.  Copy this file into your pintos/src/threads directory
+>> and add it to your Hg repository.
+
+>> Recall that this document accounts for 50% of your grade for
+>> this project, so you should put considerable thought into your
+>> answers.  If your answer is vague (e.g., "We fix this problem by
+>> doing stuff."), your score WILL suffer.  In particular, your
+>> rationale answers MUST provide a specific alternative design
+>> along with a CLEAR explanation of why your approach is superior.
+>> For instance, if your approach employs a data structure with
+>> O(1) average overhead while another would require O(n) work,
+>> you should provide these details.  Finally, your writing should
+>> be well-organized (i.e., use proper grammar) and properly
+>> formatted to match the line lengths of the original documentation.
+				   
+---- GROUP ----
+
+>> Fill in the names and email addresses of your group members.
+
+Team name:  gudimepg
+Members:    Gudimetta, Pavan
+	    Turnbull, Conner
+	    Winters, Patrck
+	    Rosen, Mickey
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, notes for the
+>> TAs, or extra credit, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the JMU Pintos documentation,
+>> course text, lecture notes, and course staff.
+
+
+			 PRIORITY SCHEDULING
+			 ===================
+
+---- DATA STRUCTURES ----
+
+>> B1:  What data structure(s) and/or global variables do you use to
+>> keep track of thread priorities?  Copy the declaration of each here,
+>> including a brief description of its purpose (25 words or less).
+>> Furthermore, explain how this data structure is used by the
+>> scheduler to select the correct thread.
+
+struct thread;
+int priority; - This stores the threads priority which is used to
+		decide what thread should run.
+thread* cur   - This stores a pointer for the current thread in order 
+		to sort semaphores and cond-vars that are stored on a 
+		thread's stack.
+
+>> B2:  One of the problems with basic priority scheduling is that it
+>> can lead to priority inversion.  For instance, assume that a high
+>> priority thread (H) is waiting on a lock that a low priority
+>> thread (L) has.  This matter can be complicated further if there
+>> is a medium priority thread (M) also executing.  In that case,
+>> H is blocked (waiting on the lock), so M gets to execute.  This
+>> defeats the purpose of H having a higher priority!
+
+>> One solution to priority inversion is priority donation.  In that
+>> case, the high priority thread may temporarily raise the priority
+>> level of another thread (i.e., "donate" its high priority level)
+>> to get the lock sooner.  For instance, in the previous scenario,
+>> H could donate its priority to L, thereby giving L a higher
+>> priority level than M.  Consequently, L would get to execute until
+>> it releases the lock.  Once the lock is released, L's priority
+>> would return to its previous (low) level.
+
+>> Describe a data structure that could be used to implement priority
+>> donation.  Keep in mind that you must also keep track of the
+>> thread's original (base) priority level.
+
+Inside the thread struct, you can add a new priority called effective_priority.
+This would be used to keep track of the threads current running level if it
+had any priority donated to it. The standard "priority" variable is used to
+store the baseline priority. So after a thread has been donated to, you would
+increase the effective_priority to the donated level and leave regular priority
+alone. After you release the lock, you would then set the priority back to the
+base level.
+
+---- ALGORITHMS ----
+
+>> B3:  Locks, semaphores, and condition variables all maintain a list
+>> of waiting threads.  How do you ensure that the highest priority
+>> waiting thread is scheduled first?
+
+Once a waiting variable has been released or "up-ed", you would check each
+thread that was waiting on it and awake the thread that has the highest
+priority. Our priority scheduling
+implementation differentiates between lock, semaphores, and cond-vars 
+based on their respective designs. The Pintos implementation of a semaphore relies
+on its list of waiters to determine which threads are currently waiting on it
+to be released. When sorting thread priority based on semaphores, we used each 
+semaphore's list of waiters to search for the highest priority thread. Since each list 
+contains the elements of each thread that is waiting on that particular semaphore, it 
+was easy and simple to call the list_sort function based on the priority of
+each elements.Condition variables proved to be a little difficult for priority scheduling
+since a condition-variable (aka cond-var) contains both a semaphore and a lock.
+In order to sort cond-vars (which were stored  on the stack), we need to have a
+pointer to the current thread within the semaphore element in order to keep
+track of each cond-var and its respective thread in order to perform priority
+scheduling. 
+
+>> B4:  Any thread scheduling mechanism must be efficient.  How do
+>> you minimize the amount of performance overhead when selecting the
+>> highest priority thread for scheduling?  Describe the overhead
+>> cost of your algorithm.  Make sure you address both the average
+>> and worst-case scenarios.
+
+When a new thread needs to be scheduled to run and it has the highest priority, it
+will be inserted into the ready list in the "ordered" fashion based on our
+sorting function that sorts the elements in the ready list based on their
+priorities. The sorting function compares the new thread with an already
+inserted thread and if the new thread's priority is higher, it will be pushed 
+in the front of the ready list.
+This ensures that the highest priority thread will be popped off the ready
+list whenever it is to be scheduled.
+
+>> B5:  Returning to priority donation, describe an algorithm for
+>> lowering a thread's priority after releasing a lock.  For
+>> instance, assume that H and M have both donated priority to L.
+>> When L releases a lock, what should its priority become?  Does it
+>> matter if H and M were waiting on the same lock?  What if they
+>> were waiting on different locks?
+
+The priority of L in this case would become H, since that is the highest
+priority of a thread waiting for that lock that was just released. If H and M
+were on the same lock, H would run first followed by M. If they were on two
+different locks, then two situations can arise. If M's lock was released first, L
+would continue to run until H's lock was released and then H would run followed
+by M. If H's lock was released first, H would run, followed by L and then M
+once it's lock was released.
+
+>> B6:  Consider the case of a nested priority donation.  That is,
+>> assume M acquires lock K1, then tries to acquire lock K2.  However,
+>> L has previous acquired K2.  As a result, M donates its priority
+>> to L.  Next, H arrives and requests K1.  Describe what would need
+>> to happen, and what happens when L releases K2.
+
+First L would run with a priority level of H until it releases K1. Once K1 is
+released, L would lower its priority level to M and then H would take control
+until it's finished. Once H is finished, L would continue execution until it
+releases K2. L would then lower it's priority back to the default L level and M
+would exectue until it's complete. L would then gain control again until it's
+finished.
+
+---- RATIONALE ----
+
+>> B7:  Describe an alternative approach that could have been used to
+>> solve this problem.  Include specific information about the data
+>> structures, algorithms, and synchronization techniques that would
+>> have been required.  Explain why you chose to implement the design
+>> that you did.
+
+An alternative approach to this could have the thread that was "donated-to"
+keep track of it's previous effective priorities. Everytime it releases a lock,
+     it would check the front of the array (or list) to see if that priority is
+     the same as the baseline priority. If it isn't the same, it would lower
+     it's priority to that previous value and remove it from the array/list.
+
+We chose to use the design explained in B6 because keeping track of the data
+only required to keep track of old priorities through the previous thread. Once
+the previous thread was ready to run, you could re-instate the priority of the
+"donated-to" thread once the old thread restarted execution.
