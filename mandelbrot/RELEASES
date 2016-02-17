@@ -1,0 +1,71 @@
+Team Members: Larry, Moe, Curly
+
+==============================================================================
+
+Week of 8/31 - 9/6 (sample entry)
+
+Project status summary:
+
+    * Total test cases passed: 6
+    * New test cases passed this week: alarm-priority, alarm-simultaneous
+    * Next test case(s) to attempt: priority-change, priority-sema
+
+We made good progress on the alarm clock scheduler this week, and got it
+switched over to priority-based. We are now going to start working on adding
+support for changing priorities.
+
+Contribution summary:
+
+    * Larry and Moe met to work on the alarm-priority test case and got that
+      working correctly.
+    * Curly updated the design document, answering question A4.
+    * Curly and Moe completed the alarm-simultaneous test case, based on
+      suggestions from Larry.
+
+Questions and issues:
+
+The priority-sema test case looks fairly straightforward, but the expected
+output seems unusual. It looks like the priority levels should all be lower
+than the main thread, but they seem to preempt the main thread. Why should the
+child threads preempt the main thread?
+
+==============================================================================
+
+Team Members: Pavan,Patrick,Connor, and Mickey
+
+==============================================================================
+
+Week of 9/10 - 9/17
+
+Project status summmary: 
+
+		* Total Test Cases Passed :
+		* 
+		*
+
+
+Contribution summary:
+		* (9/13) Pavan,Patrick and Connor got file parsing/string parsing implemented Due to
+		* permission errors,Pavan has been pushing commits to repository
+		* (9/14) Pavan, Patrick, and Connor began working on multi-threading the mandelbrot-set
+		* (9/15) Pavan, Patrick continued worked on multi-threading mandelbrot, while Connor 
+		* began working on msort.
+		* (9/16) Pavan, Patrick and Connor finished getting multi-threading for mandelbrot and
+		* achieving writing to a TGA file (not properly formatted)
+		* (9/17) Pavan and Patrick worked on potential ideas for formatting the TGA file to work
+		* with both the mandelbrot set and the header information 
+		* (9/20) Patrick got the header working and the TGA file generated properly. Pavan, Patrick
+		* and Connor worked on getting the msort multi-threading working. 
+		* (9/21) Pavan and Patrick got the msort multi-threading working (mostly). Due to time
+		* constraints, we were unable to fully test and debug the multi-threaded msort
+		* implementation. It sorts accordingly, however due to logic error, it does not merge
+		* properly at the end of the recursive calls within each thread. 
+Questions and issues:
+	Mickey Rosen has made an effort to attend group meetings, however due to distrations and
+other "personal reasons", he was unable to make major contributions to this project. The group
+has expressed their concerns, they hope that Mickey will aide the group in future projects.
+
+Due to legacy documentation, we were unable to conduct "analysis" of our application due to 
+the absence of the ANALYSIS file within our source code repository that was originally given to
+us.
+===============================================================================

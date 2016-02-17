@@ -1,0 +1,51 @@
+# -*- makefile -*-
+
+# Test names.
+# Add each test case name, one per line, with a \ at the end
+TESTS = $(addprefix tests/, \
+	mandel_0 \
+	mandel_1 \
+	mandel_2 \
+	mandel_3 \
+	mandel_4 \
+	mandel_5 \
+	mandel_1p \
+	mandel_2p \
+	mandel_3p \
+	mandel_4p \
+	mandel_5p \
+	mandel_nonint \
+	msort_1 \
+	msort_2 \
+	msort_3 \
+	msort_1p \
+	msort_2p \
+	msort_3p \
+	msort_nonexist \
+	msort_mismatch \
+)
+
+# Test case arguments
+# For each test case you named above, you need an _ARGS line that specifies
+# the command-line arguments to pass. For instance, if you were testing the
+# "tar" program with tar xvfz myfile.tgz, the args would be xvfz myfile.tgz.
+tests/mandel_0_ARGS = -m ../tests/mandel_0.test
+tests/mandel_1_ARGS = -m ../tests/mandel_1.test
+tests/mandel_2_ARGS = -m ../tests/mandel_2.test
+tests/mandel_3_ARGS = -m ../tests/mandel_3.test
+tests/mandel_4_ARGS = -m ../tests/mandel_4.test
+tests/mandel_5_ARGS = -m ../tests/mandel_5.test
+tests/mandel_1p_ARGS = -m ../tests/mandel_1p.test
+tests/mandel_2p_ARGS = -m ../tests/mandel_2p.test
+tests/mandel_3p_ARGS = -m ../tests/mandel_3p.test
+tests/mandel_4p_ARGS = -m ../tests/mandel_4p.test
+tests/mandel_5p_ARGS = -m ../tests/mandel_5p.test
+tests/mandel_nonint_ARGS = -m ../tests/mandel_nonint.test
+tests/msort_1_ARGS = -s ../tests/msort_1.test
+tests/msort_2_ARGS = -s ../tests/msort_2.test
+tests/msort_3_ARGS = -s ../tests/msort_3.test
+tests/msort_1p_ARGS = -s ../tests/msort_1p.test
+tests/msort_2p_ARGS = -s ../tests/msort_2p.test
+tests/msort_3p_ARGS = -s ../tests/msort_3p.test
+tests/msort_mismatch_ARGS = -s ../tests/msort_mismatch.test
+tests/msort_nonexist_ARGS = -s ../tests/msort_nonexist.test

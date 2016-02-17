@@ -1,0 +1,14 @@
+# -*- makefile -*-
+
+########################################
+# Begin making edits here as necessary #
+########################################
+
+# Source code listing
+# To add another source code file for the project, remove the "# "
+# at the beginning of the second line and change the name from
+# "another.c" to the name of your source code file
+
+src/main_SRC  = src/main/hello.c
+src/main_SRC += src/main/bash.c
+src/main_SRC += src/main/pipe.c

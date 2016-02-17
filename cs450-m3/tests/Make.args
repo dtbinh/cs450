@@ -1,0 +1,23 @@
+# -*- makefile -*-
+
+# Test names.
+# Add each test case name, one per line, with a \ at the end
+TESTS = $(addprefix tests/, \
+    file_error \
+	basic \
+	mandel2 \
+	mandel3 \
+	mandel4 \
+	pthread1 \
+)
+
+# Test case arguments
+# For each test case you named above, you need an _ARGS line that specifies
+# the command-line arguments to pass. For instance, if you were testing the
+# "tar" program with tar xvfz myfile.tgz, the args would be xvfz myfile.tgz.
+tests/file_error_ARGS = -f
+tests/basic_ARGS = 
+tests/mandel2_ARGS = -x -1.50 -y -0.20 -X -0.30 -Y 0.70 -f mandel2.tga
+tests/mandel3_ARGS = -x -0.15 -X -0.07 -y 0.85 -Y 0.91 -f mandel3.tga
+tests/mandel4_ARGS = -Y 0.665 -y 0.635 -x -0.03 -X 0.01 -f mandel4.tga
+tests/pthread1_ARGS = -p -n 10 -f pthread1.tga

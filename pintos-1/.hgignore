@@ -1,0 +1,4 @@
+src/threads/build
+src/userprog/build
+src/utils/pintos-gdb
+
